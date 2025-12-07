@@ -73,6 +73,7 @@ const prodiMap: Record<string, Record<string, { code: string, name: string }[]>>
 const students = ref<StudentDto[]>([])
 const isEditing = ref(false)
 const editingId = ref('')
+const errors = ref<Record<string, string>>({})
 
 const form = ref<CreateStudentRequest>({
   firstName: '',
@@ -106,11 +107,72 @@ const fetchStudents = async () => {
   }
 }
 
+const validateForm = () => {
+  errors.value = {}
+  let isValid = true
+
+  if (!form.value.firstName) {
+    errors.value.firstName = 'First Name is required'
+    isValid = false
+  } else if (form.value.firstName.length > 50) {
+    errors.value.firstName = 'First Name cannot exceed 50 characters'
+    isValid = false
+  }
+
+  if (form.value.lastName && form.value.lastName.length > 50) {
+    errors.value.lastName = 'Last Name cannot exceed 50 characters'
+    isValid = false
+  }
+
+  if (!form.value.dateOfBirth) {
+    errors.value.dateOfBirth = 'Date of Birth is required'
+    isValid = false
+  } else {
+    const dob = new Date(form.value.dateOfBirth)
+    const today = new Date()
+    let age = today.getFullYear() - dob.getFullYear()
+    const m = today.getMonth() - dob.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--
+    }
+    if (age < 17) {
+      errors.value.dateOfBirth = 'Student must be at least 17 years old'
+      isValid = false
+    }
+  }
+
+  if (!isEditing.value) {
+    if (!form.value.facultyCode) {
+      errors.value.facultyCode = 'Faculty is required'
+      isValid = false
+    }
+    if (!form.value.jenjangCode) {
+      errors.value.jenjangCode = 'Jenjang is required'
+      isValid = false
+    }
+    if (!form.value.prodiCode) {
+      errors.value.prodiCode = 'Prodi is required'
+      isValid = false
+    }
+    if (!form.value.angkatan) {
+      errors.value.angkatan = 'Angkatan is required'
+      isValid = false
+    } else if (!/^\d{2}$/.test(form.value.angkatan)) {
+      errors.value.angkatan = 'Angkatan must be 2 digits (e.g., 23)'
+      isValid = false
+    }
+  }
+
+  return isValid
+}
+
 const saveStudent = async () => {
+  if (!validateForm()) return
+
   try {
     if (isEditing.value) {
       // Update
-      await fetch(`${apiUrl}/${editingId.value}`, {
+      const res = await fetch(`${apiUrl}/${editingId.value}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -119,19 +181,22 @@ const saveStudent = async () => {
           dateOfBirth: form.value.dateOfBirth
         })
       })
+      if (!res.ok) throw new Error('Failed to update')
     } else {
       // Create
-      await fetch(apiUrl, {
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form.value)
       })
+      if (!res.ok) throw new Error('Failed to create')
     }
     
     resetForm()
     await fetchStudents()
   } catch (err) {
     console.error("Error saving student:", err)
+    alert("Failed to save student. Please check your input.")
   }
 }
 
@@ -178,6 +243,7 @@ const resetForm = () => {
   }
   isEditing.value = false
   editingId.value = ''
+  errors.value = {}
 }
 
 onMounted(() => {
@@ -191,50 +257,56 @@ onMounted(() => {
     <h1 class="text-2xl font-bold mb-4">{{ appTitle }}</h1>
     
     <div class="bg-gray-100 p-6 mb-4 rounded-lg text-gray-800">
-      <h3 class="text-lg font-bold mb-4">{{ isEditing ? 'Edit Student' : 'Add Student' }}</h3>
       <form @submit.prevent="saveStudent" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Personal Info -->
         <div class="flex flex-col">
           <label class="text-sm mb-1 font-bold text-gray-800">First Name</label>
-          <input v-model="form.firstName" required class="p-2 border border-gray-300 rounded bg-white text-gray-800" />
+          <input v-model="form.firstName" class="p-2 border border-gray-300 rounded bg-white text-gray-800" :class="{'border-red-500': errors.firstName}" />
+          <span v-if="errors.firstName" class="text-red-500 text-xs mt-1">{{ errors.firstName }}</span>
         </div>
         <div class="flex flex-col">
           <label class="text-sm mb-1 font-bold text-gray-800">Last Name</label>
-          <input v-model="form.lastName" class="p-2 border border-gray-300 rounded bg-white text-gray-800" />
+          <input v-model="form.lastName" class="p-2 border border-gray-300 rounded bg-white text-gray-800" :class="{'border-red-500': errors.lastName}" />
+          <span v-if="errors.lastName" class="text-red-500 text-xs mt-1">{{ errors.lastName }}</span>
         </div>
         <div class="flex flex-col">
           <label class="text-sm mb-1 font-bold text-gray-800">Date of Birth</label>
-          <input v-model="form.dateOfBirth" type="date" required class="p-2 border border-gray-300 rounded bg-white text-gray-800" />
+          <input v-model="form.dateOfBirth" type="date" class="p-2 border border-gray-300 rounded bg-white text-gray-800" :class="{'border-red-500': errors.dateOfBirth}" />
+          <span v-if="errors.dateOfBirth" class="text-red-500 text-xs mt-1">{{ errors.dateOfBirth }}</span>
         </div>
 
         <!-- Academic Info (Hidden in edit) -->
         <div class="flex flex-col" v-if="!isEditing">
           <label class="text-sm mb-1 font-bold text-gray-800">Fakultas</label>
-          <select v-model="form.facultyCode" required class="p-2 border border-gray-300 rounded bg-white text-gray-800">
+          <select v-model="form.facultyCode" class="p-2 border border-gray-300 rounded bg-white text-gray-800" :class="{'border-red-500': errors.facultyCode}">
             <option disabled value="">Select Faculty</option>
             <option v-for="f in faculties" :key="f.code" :value="f.code">{{ f.code }} - {{ f.name }}</option>
           </select>
+          <span v-if="errors.facultyCode" class="text-red-500 text-xs mt-1">{{ errors.facultyCode }}</span>
         </div>
 
         <div class="flex flex-col" v-if="!isEditing">
           <label class="text-sm mb-1 font-bold text-gray-800">Jenjang</label>
-          <select v-model="form.jenjangCode" required class="p-2 border border-gray-300 rounded bg-white text-gray-800">
+          <select v-model="form.jenjangCode" class="p-2 border border-gray-300 rounded bg-white text-gray-800" :class="{'border-red-500': errors.jenjangCode}">
             <option disabled value="">Select Jenjang</option>
             <option v-for="j in jenjangs" :key="j.code" :value="j.code">{{ j.code }} - {{ j.name }}</option>
           </select>
+          <span v-if="errors.jenjangCode" class="text-red-500 text-xs mt-1">{{ errors.jenjangCode }}</span>
         </div>
 
         <div class="flex flex-col" v-if="!isEditing">
           <label class="text-sm mb-1 font-bold text-gray-800">Program Studi</label>
-          <select v-model="form.prodiCode" required :disabled="availableProdis.length === 0" class="p-2 border border-gray-300 rounded bg-white text-gray-800 disabled:bg-gray-200">
+          <select v-model="form.prodiCode" :disabled="availableProdis.length === 0" class="p-2 border border-gray-300 rounded bg-white text-gray-800 disabled:bg-gray-200" :class="{'border-red-500': errors.prodiCode}">
             <option disabled value="">Select Prodi</option>
             <option v-for="p in availableProdis" :key="p.code" :value="p.code">{{ p.code }} - {{ p.name }}</option>
           </select>
+          <span v-if="errors.prodiCode" class="text-red-500 text-xs mt-1">{{ errors.prodiCode }}</span>
         </div>
 
         <div class="flex flex-col" v-if="!isEditing">
           <label class="text-sm mb-1 font-bold text-gray-800">Angkatan (YY)</label>
-          <input v-model="form.angkatan" placeholder="e.g. 23" maxlength="2" required class="p-2 border border-gray-300 rounded bg-white text-gray-800" />
+          <input v-model="form.angkatan" placeholder="e.g. 23" maxlength="2" class="p-2 border border-gray-300 rounded bg-white text-gray-800" :class="{'border-red-500': errors.angkatan}" />
+          <span v-if="errors.angkatan" class="text-red-500 text-xs mt-1">{{ errors.angkatan }}</span>
         </div>
 
         <div class="col-span-1 md:col-span-2 flex gap-2">
