@@ -270,6 +270,10 @@ const showAnalytics = ref(true)
 const importInputRef = ref<HTMLInputElement | null>(null)
 const importLoading = ref(false)
 const exportLoading = ref(false)
+const pageSizeOptions = [5, 10, 20, 50]
+const defaultPageSize = pageSizeOptions[1] ?? pageSizeOptions[0] ?? 10
+const pageSize = ref<number>(defaultPageSize)
+const currentPage = ref(1)
 
 const analyticsToggleLabel = computed(() => (showAnalytics.value ? 'Hide analytics' : 'Show analytics'))
 const analyticsToggleHint = computed(() => (showAnalytics.value ? 'Collapse cohort insights' : 'Reveal cohort insights'))
@@ -383,6 +387,14 @@ const filteredStudents = computed<StudentDto[]>(() => {
 
     return matchesSearch && matchesFaculty && matchesLevel && matchesYear
   })
+})
+
+const totalFilteredStudents = computed(() => filteredStudents.value.length)
+const totalPages = computed(() => {
+  const size = Math.max(1, pageSize.value || 1)
+  const total = totalFilteredStudents.value
+  const pages = total ? Math.ceil(total / size) : 1
+  return Math.max(1, pages)
 })
 
 const averageAge = computed(() => {
@@ -523,6 +535,13 @@ const studentTableRows = computed<StudentTableRow[]>(() =>
   })
 )
 
+const paginatedStudentTableRows = computed<StudentTableRow[]>(() => {
+  if (!studentTableRows.value.length) return []
+  const size = Math.max(1, pageSize.value || 1)
+  const startIndex = Math.max(0, (currentPage.value - 1) * size)
+  return studentTableRows.value.slice(startIndex, startIndex + size)
+})
+
 const availableYearFilters = computed(() => {
   const unique = new Map<string, string>()
   students.value.forEach((student) => {
@@ -569,6 +588,31 @@ const setFilterValue = (target: typeof filterFaculty, value: AcceptableValue) =>
 const handleFacultyFilterChange = (value: AcceptableValue) => setFilterValue(filterFaculty, value)
 const handleLevelFilterChange = (value: AcceptableValue) => setFilterValue(filterLevel, value)
 const handleYearFilterChange = (value: AcceptableValue) => setFilterValue(filterYear, value)
+
+const handlePageChange = (page: number) => {
+  const nextPage = Number.isFinite(page) ? Math.floor(page) : 1
+  const clamped = Math.min(Math.max(nextPage, 1), totalPages.value || 1)
+  currentPage.value = clamped
+}
+
+const handlePageSizeChange = (size: number) => {
+  if (!Number.isFinite(size) || size <= 0) return
+  pageSize.value = Math.floor(size)
+}
+
+watch(filteredStudents, () => {
+  currentPage.value = 1
+})
+
+watch(pageSize, () => {
+  currentPage.value = 1
+})
+
+watch(totalPages, (pages) => {
+  if (currentPage.value > pages) {
+    currentPage.value = pages
+  }
+})
 
 type AnalyticsSection = {
   key: string
@@ -1110,11 +1154,17 @@ onMounted(() => {
         </section>
 
         <StudentTable
-          :students="studentTableRows"
+          :students="paginatedStudentTableRows"
           :loading="tableLoading"
+          :page="currentPage"
+          :page-size="pageSize"
+          :total="totalFilteredStudents"
+          :page-size-options="pageSizeOptions"
           @edit="editStudent"
           @delete="confirmDelete"
           @create="openCreateDialog"
+          @change-page="handlePageChange"
+          @change-page-size="handlePageSizeChange"
         />
       </main>
 

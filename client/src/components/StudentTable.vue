@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { AcceptableValue } from 'reka-ui'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface StudentDto {
   id: string
@@ -18,6 +20,10 @@ type MetadataKey = 'facultyLabel' | 'levelLabel' | 'programLabel' | 'yearLabel'
 interface Props {
   students: StudentDto[]
   loading?: boolean
+  page?: number
+  pageSize?: number
+  total?: number
+  pageSizeOptions?: number[]
 }
 
 const metadataFields: ReadonlyArray<{ key: MetadataKey; label: string }> = [
@@ -38,10 +44,31 @@ const formatAge = (age?: number) => {
   return `${age} yrs`
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+  page: 1,
+  pageSize: 10,
+  pageSizeOptions: () => [5, 10, 20, 50]
+})
 
 const students = computed(() => props.students)
-const loading = computed(() => props.loading ?? false)
+const loading = computed(() => props.loading)
+const page = computed(() => (props.page ?? 1) < 1 ? 1 : props.page ?? 1)
+const pageSize = computed(() => (props.pageSize ?? 10) < 1 ? 1 : props.pageSize ?? 10)
+const pageSizeOptions = computed(() => (props.pageSizeOptions?.length ? props.pageSizeOptions : [5, 10, 20, 50]))
+const total = computed(() => (typeof props.total === 'number' ? props.total : students.value.length))
+const totalPages = computed(() => {
+  if (total.value === 0) return 1
+  return Math.max(1, Math.ceil(total.value / pageSize.value))
+})
+const pageStart = computed(() => {
+  if (!total.value) return 0
+  return (page.value - 1) * pageSize.value + 1
+})
+const pageEnd = computed(() => {
+  if (!total.value) return 0
+  return Math.min(total.value, page.value * pageSize.value)
+})
 
 const skeletonRows = [0, 1, 2, 3]
 
@@ -49,7 +76,15 @@ const emit = defineEmits<{
   edit: [id: string]
   delete: [id: string]
   create: []
+  'change-page': [page: number]
+  'change-page-size': [size: number]
 }>()
+
+const handlePageSizeSelect = (value: AcceptableValue) => {
+  const parsed = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(parsed) || parsed <= 0) return
+  emit('change-page-size', Math.floor(parsed))
+}
 </script>
 
 <template>
@@ -57,7 +92,7 @@ const emit = defineEmits<{
     <header class="flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="mt-1 text-2xl font-semibold text-white">Students</h2>
-        <p class="text-sm text-white/65">{{ students.length }} total records</p>
+        <p class="text-sm text-white/65">{{ total }} total records</p>
       </div>
     </header>
 
@@ -147,4 +182,54 @@ const emit = defineEmits<{
       </template>
     </div>
   </section>
+  <footer class="mt-8 flex flex-col gap-4 border-t border-white/10 pt-6 text-white/70 md:flex-row md:items-center md:justify-between">
+    <p class="text-sm">
+      <template v-if="total">
+        Showing {{ pageStart }}
+        <span v-if="pageEnd > pageStart">– {{ pageEnd }}</span>
+        of {{ total }} students
+      </template>
+      <template v-else>
+        No students found
+      </template>
+    </p>
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-2 text-sm">
+        <span>Rows per page</span>
+        <Select :modelValue="String(pageSize)" @update:modelValue="handlePageSizeSelect">
+          <SelectTrigger class="h-9 w-20 border-white/20 bg-white/5 text-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent class="border-white/15 bg-[#050912]/95 text-white">
+            <SelectItem
+              v-for="option in pageSizeOptions"
+              :key="option"
+              :value="String(option)"
+            >
+              {{ option }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <Button
+          variant="ghost"
+          class="border border-white/10 px-3 text-white/80 hover:bg-white/10 hover:text-white"
+          :disabled="page <= 1"
+          @click="emit('change-page', page - 1)"
+        >
+          Previous
+        </Button>
+        <span>Page {{ Math.min(page, totalPages) }} / {{ totalPages }}</span>
+        <Button
+          variant="ghost"
+          class="border border-white/10 px-3 text-white/80 hover:bg-white/10 hover:text-white"
+          :disabled="page >= totalPages"
+          @click="emit('change-page', page + 1)"
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  </footer>
 </template>
