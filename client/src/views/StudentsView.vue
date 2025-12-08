@@ -2,7 +2,9 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useForm } from '@tanstack/vue-form'
 import { z } from 'zod'
-import StudentTable from '../components/StudentTable.vue'
+import StudentAnalyticsPanel from '@/components/StudentAnalyticsPanel.vue'
+import StudentFiltersBar from '@/components/StudentFiltersBar.vue'
+import StudentTable from '@/components/StudentTable.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
@@ -12,119 +14,24 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { parseDate, today, getLocalTimeZone } from '@internationalized/date'
 import { toast } from '@/components/ui/sonner'
+import { useStudentAnalytics } from '@/composables/useStudentAnalytics'
+import {
+  faculties,
+  jenjangs,
+  prodiMap,
+  HUMANIORA_AUTO_VALUE,
+  facultySelectOptions,
+  formatOptionLabel,
+  getFacultyDisplayLabel,
+  getFacultySelectValue,
+  getProgramLabel,
+  resolveHumanioraFacultyCode,
+  isHumanioraCode,
+  formatAngkatanLabel,
+  decodeNimMetadata
+} from '@/utils/studentData'
+import type { CreateStudentRequest, StudentDto, StudentTableRow } from '@/types/student'
 import type { AcceptableValue, DateRange, DateValue } from 'reka-ui'
-
-interface StudentDto {
-  id: string
-  nomorIndukMahasiswa: string
-  namaLengkap: string
-  usia: number
-  facultyCode?: string
-  jenjangCode?: string
-  prodiCode?: string
-  angkatan?: string
-}
-
-interface CreateStudentRequest {
-  firstName: string
-  lastName: string
-  dateOfBirth: string
-  facultyCode: string
-  jenjangCode: string
-  prodiCode: string
-  angkatan: string
-}
-
-// --- Data Structure for Dropdowns ---
-const faculties = [
-  { code: 'A', name: 'Humaniora dan Industri Kreatif' },
-  { code: 'B', name: 'Teknik Sipil & Perencanaan' },
-  { code: 'C', name: 'Teknologi Industri' },
-  { code: 'D', name: 'School of Business and Management' },
-  { code: 'E', name: 'Seni & Desain' },
-  { code: 'F', name: 'Ilmu Komunikasi' },
-  { code: 'G', name: 'Keguruan dan Ilmu Pendidikan' },
-  { code: 'H', name: 'Humaniora dan Industri Kreatif (2023+)' }
-]
-
-const jenjangs = [
-  { code: '1', name: 'Strata 1 (S1)' },
-  { code: '2', name: 'Strata 2 (S2)' },
-  { code: '3', name: 'Strata 3 (S3)' }
-]
-
-const facultyNameByCode = faculties.reduce<Record<string, string>>((acc, faculty) => {
-  acc[faculty.code] = faculty.name
-  return acc
-}, {})
-
-const HUMANIORA_AUTO_VALUE = 'auto-humaniora'
-const humanioraDisplayName = 'Humaniora dan Industri Kreatif'
-const facultySelectOptions = [
-  { value: HUMANIORA_AUTO_VALUE, name: humanioraDisplayName },
-  ...faculties
-    .filter((faculty) => !['A', 'H'].includes(faculty.code))
-    .map((faculty) => ({ value: faculty.code, name: faculty.name }))
-]
-
-// Map: FacultyCode -> Jenjang -> List of Prodi
-const prodiMap: Record<string, Record<string, { code: string; name: string }[]>> = {
-  'A': {
-    '1': [{ code: '1', name: 'Sastra Inggris' }, { code: '2', name: 'Bahasa Mandarin' }],
-    '2': [{ code: '1', name: 'Magister Sastra' }]
-  },
-  'B': {
-    '1': [{ code: '1', name: 'Teknik Sipil' }, { code: '2', name: 'Arsitektur' }],
-    '2': [{ code: '1', name: 'Magister Teknik Sipil' }, { code: '2', name: 'Magister Arsitektur' }],
-    '3': [{ code: '1', name: 'Doktor Teknik Sipil' }]
-  },
-  'C': {
-    '1': [{ code: '1', name: 'Teknik Elektro' }, { code: '2', name: 'Teknik Mesin' }, { code: '3', name: 'Teknik Industri' }, { code: '4', name: 'Informatika' }],
-    '2': [{ code: '1', name: 'Magister Teknik Industri' }]
-  },
-  'D': {
-    '1': [{ code: '1', name: 'Manajemen' }, { code: '2', name: 'Akuntansi' }],
-    '2': [{ code: '1', name: 'Magister Manajemen' }]
-  },
-  'E': {
-    '1': [{ code: '1', name: 'Desain Interior' }, { code: '2', name: 'Desain Komunikasi Visual' }]
-  },
-  'F': {
-    '1': [{ code: '1', name: 'Ilmu Komunikasi' }]
-  },
-  'G': {
-    '1': [{ code: '1', name: 'PGSD' }, { code: '2', name: 'PGPAUD' }]
-  },
-  'H': {
-    '1': [{ code: '1', name: 'Sastra Inggris' }, { code: '2', name: 'Bahasa Mandarin' }, { code: '3', name: 'Desain Interior' }, { code: '4', name: 'DKV' }, { code: '5', name: 'Ilmu Komunikasi' }],
-    '2': [{ code: '1', name: 'Magister Sastra' }]
-  }
-}
-
-const formatOptionLabel = (options: { code: string; name: string }[], code?: string) => {
-  if (!code) return ''
-  const match = options.find((option) => option.code === code)
-  return match ? match.name : ''
-}
-
-const isHumanioraCode = (code?: string) => code === 'A' || code === 'H'
-
-const resolveHumanioraFacultyCode = (angkatan?: string) => {
-  const fallbackYear = Number(new Date().getFullYear().toString().slice(-2))
-  const numericYear = Number.parseInt(angkatan ?? '', 10)
-  const year = Number.isNaN(numericYear) ? fallbackYear : numericYear
-  return year >= 23 ? 'H' : 'A'
-}
-
-const getFacultySelectValue = (code?: string) => {
-  if (!code) return ''
-  return isHumanioraCode(code) ? HUMANIORA_AUTO_VALUE : code
-}
-
-const getFacultyDisplayLabel = (code?: string) => {
-  if (!code) return ''
-  return isHumanioraCode(code) ? humanioraDisplayName : facultyNameByCode[code] ?? ''
-}
 
 // State
 const students = ref<StudentDto[]>([])
@@ -397,126 +304,7 @@ const totalPages = computed(() => {
   return Math.max(1, pages)
 })
 
-const averageAge = computed(() => {
-  if (!filteredStudents.value.length) return 0
-  const total = filteredStudents.value.reduce((sum, student) => sum + (student.usia ?? 0), 0)
-  return Math.round((total / filteredStudents.value.length) * 10) / 10
-})
-
-type AnalyticsItem = {
-  label: string
-  count: number
-}
-
-type NimMetadata = Pick<StudentDto, 'facultyCode' | 'jenjangCode' | 'prodiCode' | 'angkatan'>
-
-type StudentTableRow = StudentDto & {
-  facultyLabel: string
-  levelLabel: string
-  programLabel: string
-  yearLabel: string
-}
-
-const decodeNimMetadata = (nim?: string): NimMetadata => {
-  if (!nim) return {}
-  const match = nim.match(/^([A-Za-z])(\d)(\d)(\d{2})/)
-  if (!match) return {}
-  const [, faculty = '', jenjang = '', prodi = '', angkatan = ''] = match
-  return {
-    facultyCode: faculty.toUpperCase(),
-    jenjangCode: jenjang,
-    prodiCode: prodi,
-    angkatan
-  }
-}
-
-const toAnalyticsItems = (counts: Record<string, number>): AnalyticsItem[] =>
-  Object.entries(counts)
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count)
-
-const getProgramLabel = (student: StudentDto) => {
-  if (!student.facultyCode || !student.jenjangCode || !student.prodiCode) return ''
-  const program = prodiMap[student.facultyCode]?.[student.jenjangCode]?.find((option) => option.code === student.prodiCode)
-  return program?.name ?? ''
-}
-
-const formatAngkatanLabel = (angkatan?: string) => {
-  if (!angkatan) return ''
-  return `20${angkatan}`
-}
-
-const facultyDistribution = computed<AnalyticsItem[]>(() => {
-  const counts: Record<string, number> = {}
-  filteredStudents.value.forEach((student) => {
-    if (!student.facultyCode) return
-    const label = getFacultyDisplayLabel(student.facultyCode) || `Faculty ${student.facultyCode}`
-    counts[label] = (counts[label] ?? 0) + 1
-  })
-  return toAnalyticsItems(counts)
-})
-
-const levelDistribution = computed<AnalyticsItem[]>(() => {
-  const counts: Record<string, number> = {}
-  filteredStudents.value.forEach((student) => {
-    if (!student.jenjangCode) return
-    const label = formatOptionLabel(jenjangs, student.jenjangCode) || `Level ${student.jenjangCode}`
-    counts[label] = (counts[label] ?? 0) + 1
-  })
-  return toAnalyticsItems(counts)
-})
-
-const yearDistribution = computed<AnalyticsItem[]>(() => {
-  const counts: Record<string, number> = {}
-  filteredStudents.value.forEach((student) => {
-    const label = formatAngkatanLabel(student.angkatan)
-    if (!label) return
-    counts[label] = (counts[label] ?? 0) + 1
-  })
-  return toAnalyticsItems(counts)
-})
-
-const programDistribution = computed<AnalyticsItem[]>(() => {
-  const counts: Record<string, number> = {}
-  filteredStudents.value.forEach((student) => {
-    const label = getProgramLabel(student)
-    if (!label) return
-    counts[label] = (counts[label] ?? 0) + 1
-  })
-  return toAnalyticsItems(counts).slice(0, 5)
-})
-
-const ageSegments = computed<AnalyticsItem[]>(() => {
-  if (!filteredStudents.value.length) return []
-  const buckets = [
-    { label: '≤ 20 years', test: (age: number) => age <= 20 },
-    { label: '21 - 23 years', test: (age: number) => age >= 21 && age <= 23 },
-    { label: '24 - 26 years', test: (age: number) => age >= 24 && age <= 26 },
-    { label: '27+ years', test: (age: number) => age >= 27 }
-  ]
-
-  const results = buckets.map((bucket) => ({
-    label: bucket.label,
-    count: filteredStudents.value.reduce((sum, student) => (bucket.test(student.usia ?? 0) ? sum + 1 : sum), 0)
-  }))
-
-  return results.filter((bucket) => bucket.count > 0)
-})
-
-const ageHighlights = computed(() => {
-  const segments = ageSegments.value
-  const total = segments.reduce((sum, segment) => sum + segment.count, 0)
-  if (!total) return []
-  return segments.map((segment) => ({
-    ...segment,
-    percentage: Math.round((segment.count / total) * 100)
-  }))
-})
-
-const prominentAgeSegments = computed(() => ageHighlights.value.slice(0, 3))
-
-const leadingProgram = computed(() => programDistribution.value[0])
-const topAgeSegment = computed(() => prominentAgeSegments.value[0])
+const { averageAge, prominentAgeSegments, leadingProgram, topAgeSegment, analyticsSections } = useStudentAnalytics(filteredStudents)
 
 const studentTableRows = computed<StudentTableRow[]>(() =>
   filteredStudents.value.map((student) => {
@@ -612,53 +400,6 @@ watch(totalPages, (pages) => {
   if (currentPage.value > pages) {
     currentPage.value = pages
   }
-})
-
-type AnalyticsSection = {
-  key: string
-  title: string
-  description: string
-  data: AnalyticsItem[]
-  empty: string
-  maxCount: number
-}
-
-const analyticsSections = computed<AnalyticsSection[]>(() => {
-  const sections: Omit<AnalyticsSection, 'maxCount'>[] = [
-    {
-      key: 'faculty',
-      title: 'Faculty mix',
-      description: 'Where each cohort sits',
-      data: facultyDistribution.value,
-      empty: 'No students yet'
-    },
-    {
-      key: 'level',
-      title: 'Level breakdown',
-      description: 'S1 vs S2 vs S3 load',
-      data: levelDistribution.value,
-      empty: 'No students yet'
-    },
-    {
-      key: 'year',
-      title: 'Entry year trend',
-      description: 'How batches spread over time',
-      data: yearDistribution.value,
-      empty: 'No students yet'
-    },
-    {
-      key: 'program',
-      title: 'Program spotlight',
-      description: 'Top selected study programs',
-      data: programDistribution.value,
-      empty: 'No students yet'
-    }
-  ]
-
-  return sections.map((section) => ({
-    ...section,
-    maxCount: section.data.reduce((max, item) => Math.max(max, item.count), 0)
-  }))
 })
 
 // Alerts via toasts
@@ -794,7 +535,6 @@ const handleDobCalendarSelect = (field: FieldSlotContext<string>, value?: Calend
 
 const inputSurfaceClass = 'border-white/20 bg-[#060b16] text-white placeholder:text-white/50 focus-visible:border-emerald-300/60 focus-visible:ring-emerald-400/30'
 const selectTriggerClass = 'w-full border-white/20 bg-[#060b16] text-white data-[placeholder]:text-white/50 focus-visible:border-emerald-300/60 focus-visible:ring-emerald-400/30'
-const statsCardClass = 'rounded-xl border border-white/15 bg-[#070d1b]/90 p-5 shadow-[0_35px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl'
 
 const fetchStudents = async () => {
   tableLoading.value = true
@@ -971,187 +711,37 @@ onMounted(() => {
           </div>
         </section>
 
-        <section class="rounded-xl border border-white/10 bg-[#03060f]/70 p-5 shadow-[0_25px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p class="text-sm font-semibold tracking-wide text-white/70">Overview</p>
-              <p class="text-xs text-white/55">Toggle to focus on records.</p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              class="border border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
-              :aria-pressed="showAnalytics"
-              :title="analyticsToggleHint"
-              @click="toggleAnalyticsVisibility"
-            >
-              {{ analyticsToggleLabel }}
-            </Button>
-          </div>
-        </section>
+        <StudentAnalyticsPanel
+          :show-analytics="showAnalytics"
+          :students-count="students.length"
+          :average-age="averageAge"
+          :leading-program="leadingProgram"
+          :top-age-segment="topAgeSegment"
+          :prominent-age-segments="prominentAgeSegments"
+          :analytics-sections="analyticsSections"
+          :analytics-toggle-label="analyticsToggleLabel"
+          :analytics-toggle-hint="analyticsToggleHint"
+          @toggle-analytics="toggleAnalyticsVisibility"
+        />
 
-        <div v-if="showAnalytics" class="space-y-6">
-          <section class="grid gap-4 lg:grid-cols-4">
-            <div :class="statsCardClass">
-              <p class="text-sm font-semibold text-white/65">Total students</p>
-              <p class="mt-2 text-4xl font-semibold text-white">{{ students.length }}</p>
-              <p class="text-xs text-white/55">All records</p>
-            </div>
-            <div :class="statsCardClass">
-              <p class="text-sm font-semibold text-white/65">Average age</p>
-              <p class="mt-2 text-4xl font-semibold text-white">{{ averageAge }} yrs</p>
-              <p class="text-xs text-white/55">Rounded to one decimal</p>
-            </div>
-            <div :class="statsCardClass">
-              <p class="text-sm font-semibold text-white/65">Top program</p>
-              <p class="mt-2 text-2xl font-semibold text-white">
-                {{ leadingProgram ? leadingProgram.label : 'Awaiting data' }}
-              </p>
-              <p class="text-xs text-white/55">
-                {{ leadingProgram ? `${leadingProgram.count} students` : '' }}
-              </p>
-            </div>
-            <div :class="statsCardClass">
-              <p class="text-sm font-semibold text-white/65">Age balance</p>
-              <p class="mt-2 text-3xl font-semibold text-white">
-                {{ topAgeSegment ? `${topAgeSegment.percentage}%` : '—' }}
-              </p>
-              <p class="text-xs text-white/55">
-                {{ topAgeSegment ? `${topAgeSegment.label} cohort` : 'No students yet' }}
-              </p>
-              <div v-if="prominentAgeSegments.length" class="mt-4 space-y-2">
-                <div
-                  v-for="segment in prominentAgeSegments"
-                  :key="segment.label"
-                  class="space-y-1"
-                >
-                  <div class="flex items-center justify-between text-xs text-white/70">
-                    <span>{{ segment.label }}</span>
-                    <span>{{ segment.percentage }}%</span>
-                  </div>
-                  <div class="h-1.5 rounded-md bg-white/10">
-                    <div
-                      class="h-full rounded-md bg-cyan-400"
-                      :style="{ width: `${segment.percentage}%` }"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="grid gap-4 lg:grid-cols-2">
-            <div
-              v-for="section in analyticsSections"
-              :key="section.key"
-              :class="statsCardClass"
-            >
-              <div class="flex flex-col gap-1 text-white/70 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p class="text-sm font-semibold text-white/70">{{ section.title }}</p>
-                  <p class="text-xs text-white/60">{{ section.description }}</p>
-                </div>
-                <p v-if="section.data.length" class="text-xs text-white/55">
-                  {{ section.data.reduce((sum, item) => sum + item.count, 0) }} students
-                </p>
-              </div>
-              <div v-if="section.data.length" class="mt-5 space-y-3">
-                <div
-                  v-for="item in section.data"
-                  :key="item.label"
-                  class="flex items-center gap-3 text-sm text-white/70"
-                >
-                  <span class="w-32 shrink-0 truncate font-medium text-white">{{ item.label }}</span>
-                  <div class="h-2 flex-1 rounded-md bg-white/10">
-                    <div
-                      class="h-full rounded-md bg-emerald-400"
-                      :style="{
-                        width: section.maxCount
-                          ? `${Math.max((item.count / section.maxCount) * 100, 12)}%`
-                          : '12%'
-                      }"
-                    ></div>
-                  </div>
-                  <span class="w-10 text-right text-white">{{ item.count }}</span>
-                </div>
-              </div>
-              <p v-else class="mt-5 text-sm text-white/60">{{ section.empty }}</p>
-            </div>
-          </section>
-        </div>
-
-        <section class="rounded-xl border border-white/10 bg-[#03060f]/80 p-5 shadow-[0_25px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
-            <div class="flex-1">
-              <label class="text-xs font-semibold text-white/65">Search</label>
-              <Input
-                type="text"
-                placeholder="Search by name, ID, or program"
-                :modelValue="searchQuery"
-                :class="inputSurfaceClass"
-                @update:modelValue="updateSearchQuery"
-              />
-            </div>
-            <div class="flex flex-1 flex-wrap gap-4">
-              <div class="min-w-40 flex-1">
-                <label class="text-xs font-semibold text-white/65">Faculty</label>
-                <Select :modelValue="filterFaculty" @update:modelValue="handleFacultyFilterChange">
-                  <SelectTrigger :class="selectTriggerClass">
-                    <SelectValue placeholder="All faculties" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem :value="FILTER_ALL_VALUE">All faculties</SelectItem>
-                    <SelectItem v-for="faculty in faculties" :key="faculty.code" :value="faculty.code">
-                      {{ faculty.name }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div class="min-w-36 flex-1">
-                <label class="text-xs font-semibold text-white/65">Level</label>
-                <Select :modelValue="filterLevel" @update:modelValue="handleLevelFilterChange">
-                  <SelectTrigger :class="selectTriggerClass">
-                    <SelectValue placeholder="All levels" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem :value="FILTER_ALL_VALUE">All levels</SelectItem>
-                    <SelectItem v-for="option in jenjangs" :key="option.code" :value="option.code">
-                      {{ option.name }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div class="min-w-36 flex-1">
-                <label class="text-xs font-semibold text-white/65">Year</label>
-                <Select :modelValue="filterYear" @update:modelValue="handleYearFilterChange">
-                  <SelectTrigger :class="selectTriggerClass">
-                    <SelectValue placeholder="All years" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem :value="FILTER_ALL_VALUE">All years</SelectItem>
-                    <SelectItem
-                      v-for="year in availableYearFilters"
-                      :key="year.value"
-                      :value="year.value"
-                    >
-                      {{ year.label }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <div v-if="hasActiveFilters" class="mt-4 flex justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              class="border border-white/10 text-white/80 hover:bg-white/10"
-              @click="clearFilters"
-            >
-              Clear filters
-            </Button>
-          </div>
-        </section>
+        <StudentFiltersBar
+          :search-query="searchQuery"
+          :filter-faculty="filterFaculty"
+          :filter-level="filterLevel"
+          :filter-year="filterYear"
+          :faculties="faculties"
+          :jenjangs="jenjangs"
+          :available-year-filters="availableYearFilters"
+          :has-active-filters="hasActiveFilters"
+          :input-surface-class="inputSurfaceClass"
+          :select-trigger-class="selectTriggerClass"
+          :filter-all-value="FILTER_ALL_VALUE"
+          @update:search="updateSearchQuery"
+          @update:faculty="handleFacultyFilterChange"
+          @update:level="handleLevelFilterChange"
+          @update:year="handleYearFilterChange"
+          @clear-filters="clearFilters"
+        />
 
         <StudentTable
           :students="paginatedStudentTableRows"
