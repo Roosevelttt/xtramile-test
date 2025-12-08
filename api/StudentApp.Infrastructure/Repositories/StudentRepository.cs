@@ -41,6 +41,12 @@ namespace StudentApp.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task AddManyAsync(IEnumerable<Student> students)
+        {
+            await _context.Students.AddRangeAsync(students);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task UpdateAsync(Student student)
         {
             _context.Students.Update(student);

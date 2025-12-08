@@ -267,11 +267,105 @@ const filterLevel = ref('')
 const filterYear = ref('')
 const FILTER_ALL_VALUE = '__all__'
 const showAnalytics = ref(true)
+const importInputRef = ref<HTMLInputElement | null>(null)
+const importLoading = ref(false)
+const exportLoading = ref(false)
 
 const analyticsToggleLabel = computed(() => (showAnalytics.value ? 'Hide analytics' : 'Show analytics'))
 const analyticsToggleHint = computed(() => (showAnalytics.value ? 'Collapse cohort insights' : 'Reveal cohort insights'))
 const toggleAnalyticsVisibility = () => {
   showAnalytics.value = !showAnalytics.value
+}
+
+const getApiErrorMessage = async (response: Response) => {
+  try {
+    const payload = await response.clone().json()
+    if (payload) {
+      if (typeof payload.message === 'string') return payload.message
+      if (typeof payload.Message === 'string') return payload.Message
+    }
+  } catch {
+    /* swallow */
+  }
+
+  try {
+    const text = await response.text()
+    if (text) return text
+  } catch {
+    /* swallow */
+  }
+
+  return 'Request failed. Please try again.'
+}
+
+const openImportPicker = () => {
+  importInputRef.value?.click()
+}
+
+const handleImportFileChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement | null
+  const file = target?.files?.[0]
+  if (!file) return
+
+  importLoading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await fetch(`${apiUrl}/import`, { method: 'POST', body: formData })
+    if (!response.ok) {
+      throw new Error(await getApiErrorMessage(response))
+    }
+
+    const summary = await response.json().catch(() => null)
+    const importedCount = summary?.imported ?? summary?.Imported ?? 0
+    const duplicates = summary?.duplicates ?? summary?.Duplicates ?? 0
+    const invalid = summary?.invalid ?? summary?.Invalid ?? 0
+
+    const parts: string[] = []
+    if (importedCount) parts.push(`${importedCount} imported`)
+    if (duplicates) parts.push(`${duplicates} duplicate${duplicates === 1 ? '' : 's'} skipped`)
+    if (invalid) parts.push(`${invalid} invalid`)
+
+    showSuccess(parts.length ? `Import result: ${parts.join(', ')}` : 'Import completed.')
+    await fetchStudents()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to import students.'
+    showError(message)
+  } finally {
+    importLoading.value = false
+    if (importInputRef.value) importInputRef.value.value = ''
+  }
+}
+
+const downloadBlob = (blob: Blob, filename: string) => {
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  window.URL.revokeObjectURL(url)
+}
+
+const handleExportStudents = async () => {
+  exportLoading.value = true
+  try {
+    const response = await fetch(`${apiUrl}/export`)
+    if (!response.ok) {
+      throw new Error(await getApiErrorMessage(response))
+    }
+
+    const blob = await response.blob()
+    const stamp = new Date().toISOString().split('T')[0]
+    downloadBlob(blob, `students-${stamp}.csv`)
+    showSuccess('Export ready. Check your downloads.')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to export students.'
+    showError(message)
+  } finally {
+    exportLoading.value = false
+  }
 }
 
 const filteredStudents = computed<StudentDto[]>(() => {
@@ -790,19 +884,37 @@ onMounted(() => {
 
     <Dialog v-model:open="formDialogOpen">
       <main class="relative z-10 mx-auto max-w-6xl space-y-10 px-4 py-10 sm:px-6 lg:px-10">
+        <input
+          ref="importInputRef"
+          type="file"
+          accept=".csv,text/csv"
+          class="hidden"
+          @change="handleImportFileChange"
+        />
         <section class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 class="text-3xl font-semibold tracking-tight">Student Management</h1>
             <p class="mt-2 text-sm text-white/60">Manage student records</p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
-            <!-- <Button
+            <Button
               type="button"
               variant="outline"
-              class="border-white/20 bg-white/10 text-white/90 shadow-[0_10px_30px_rgba(0,0,0,0.45)] hover:bg-white/15 hover:text-white"
+              class="border-white/20 bg-white/5 text-white/80 shadow-[0_10px_25px_rgba(0,0,0,0.45)] hover:bg-white/10 hover:text-white"
+              :disabled="importLoading"
+              @click="openImportPicker"
             >
-              Import CSV
-            </Button> -->
+              {{ importLoading ? 'Importing...' : 'Import CSV' }}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              class="border-white/20 bg-white/5 text-white/80 shadow-[0_10px_25px_rgba(0,0,0,0.45)] hover:bg-white/10 hover:text-white"
+              :disabled="exportLoading"
+              @click="handleExportStudents"
+            >
+              {{ exportLoading ? 'Preparing...' : 'Export CSV' }}
+            </Button>
             <DialogTrigger asChild>
               <Button
                 type="button"
