@@ -40,7 +40,7 @@ const faculties = [
   { code: 'A', name: 'Humaniora dan Industri Kreatif' },
   { code: 'B', name: 'Teknik Sipil & Perencanaan' },
   { code: 'C', name: 'Teknologi Industri' },
-  { code: 'D', name: 'Bisnis dan Ekonomi' },
+  { code: 'D', name: 'School of Business and Management' },
   { code: 'E', name: 'Seni & Desain' },
   { code: 'F', name: 'Ilmu Komunikasi' },
   { code: 'G', name: 'Keguruan dan Ilmu Pendidikan' },
