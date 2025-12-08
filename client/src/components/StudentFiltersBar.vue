@@ -32,10 +32,10 @@ const handleSearchUpdate = (value: string | number) => {
 </script>
 
 <template>
-  <section class="rounded-xl border border-white/10 bg-[#03060f]/80 p-5 shadow-[0_25px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+  <section class="rounded-xl border border-slate-200/70 bg-white/90 p-5 text-slate-900 shadow-[0_25px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#03060f]/80 dark:text-white dark:shadow-[0_25px_60px_rgba(0,0,0,0.45)]">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
       <div class="flex-1">
-        <label class="text-xs font-semibold text-white/65">Search</label>
+        <label class="text-xs font-semibold text-slate-600 dark:text-white/65">Search</label>
         <Input
           type="text"
           placeholder="Search by name, ID, or program"
@@ -46,7 +46,7 @@ const handleSearchUpdate = (value: string | number) => {
       </div>
       <div class="flex flex-1 flex-wrap gap-4">
         <div class="min-w-40 flex-1">
-          <label class="text-xs font-semibold text-white/65">Faculty</label>
+          <label class="text-xs font-semibold text-slate-600 dark:text-white/65">Faculty</label>
           <Select :modelValue="props.filterFaculty" @update:modelValue="value => emit('update:faculty', value)">
             <SelectTrigger :class="props.selectTriggerClass">
               <SelectValue placeholder="All faculties" />
@@ -60,7 +60,7 @@ const handleSearchUpdate = (value: string | number) => {
           </Select>
         </div>
         <div class="min-w-36 flex-1">
-          <label class="text-xs font-semibold text-white/65">Level</label>
+          <label class="text-xs font-semibold text-slate-600 dark:text-white/65">Level</label>
           <Select :modelValue="props.filterLevel" @update:modelValue="value => emit('update:level', value)">
             <SelectTrigger :class="props.selectTriggerClass">
               <SelectValue placeholder="All levels" />
@@ -74,7 +74,7 @@ const handleSearchUpdate = (value: string | number) => {
           </Select>
         </div>
         <div class="min-w-36 flex-1">
-          <label class="text-xs font-semibold text-white/65">Year</label>
+          <label class="text-xs font-semibold text-slate-600 dark:text-white/65">Year</label>
           <Select :modelValue="props.filterYear" @update:modelValue="value => emit('update:year', value)">
             <SelectTrigger :class="props.selectTriggerClass">
               <SelectValue placeholder="All years" />
@@ -97,7 +97,7 @@ const handleSearchUpdate = (value: string | number) => {
       <Button
         type="button"
         variant="ghost"
-        class="border border-white/10 text-white/80 hover:bg-white/10"
+        class="border border-slate-300/70 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-white/80 dark:hover:bg-white/10"
         @click="emit('clear-filters')"
       >
         Clear filters

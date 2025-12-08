@@ -1,9 +1,13 @@
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-[#03050b] text-white">
+  <div class="relative min-h-screen overflow-hidden bg-slate-50 text-slate-900 transition-colors dark:bg-[#03050b] dark:text-white">
     <div class="pointer-events-none absolute inset-0">
       <div class="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-white/10 to-transparent"></div>
       <div class="absolute left-1/2 top-12 h-64 w-64 -translate-x-1/2 rounded-[120px] bg-indigo-500/20 blur-[200px]"></div>
       <div class="absolute bottom-0 right-0 h-72 w-72 rounded-[140px] bg-emerald-400/15 blur-[200px]"></div>
+    </div>
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_55%)] dark:bg-none"></div>
+    <div class="absolute right-4 top-4 z-20 flex">
+      <ThemeToggle />
     </div>
     <div class="relative z-10">
       <RouterView />
@@ -24,6 +28,7 @@
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { Toaster } from '@/components/ui/sonner'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const appTitle = import.meta.env.VITE_APP_TITLE
 

@@ -533,8 +533,11 @@ const handleDobCalendarSelect = (field: FieldSlotContext<string>, value?: Calend
   dobPickerOpen.value = false
 }
 
-const inputSurfaceClass = 'border-white/20 bg-[#060b16] text-white placeholder:text-white/50 focus-visible:border-emerald-300/60 focus-visible:ring-emerald-400/30'
-const selectTriggerClass = 'w-full border-white/20 bg-[#060b16] text-white data-[placeholder]:text-white/50 focus-visible:border-emerald-300/60 focus-visible:ring-emerald-400/30'
+const inputSurfaceClass = 'border-slate-200/70 bg-white/90 text-slate-900 placeholder:text-slate-500 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-400/40 dark:border-white/20 dark:bg-[#060b16] dark:text-white dark:placeholder:text-white/50 dark:focus-visible:border-emerald-300/60 dark:focus-visible:ring-emerald-400/30'
+const selectTriggerClass = 'w-full border-slate-200/70 bg-white/90 text-slate-900 data-[placeholder]:text-slate-500 focus-visible:border-emerald-500/40 focus-visible:ring-emerald-400/40 dark:border-white/20 dark:bg-[#060b16] dark:text-white dark:data-[placeholder]:text-white/50 dark:focus-visible:border-emerald-300/60 dark:focus-visible:ring-emerald-400/30'
+const panelSurfaceClass = 'rounded-xl border border-slate-200/70 bg-white/90 text-slate-900 shadow-[0_25px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#03060f]/80 dark:text-white dark:shadow-[0_25px_60px_rgba(0,0,0,0.45)]'
+const frostedButtonClass = 'border border-slate-300/80 bg-white/80 text-slate-900 shadow-[0_10px_25px_rgba(15,23,42,0.08)] transition hover:bg-white/90 hover:text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-white/80 dark:shadow-[0_10px_25px_rgba(0,0,0,0.45)] dark:hover:bg-white/10 dark:hover:text-white'
+const statsCardClass = 'rounded-xl border border-slate-200/70 bg-white/90 p-5 text-slate-900 shadow-[0_35px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/15 dark:bg-[#070d1b]/90 dark:text-white dark:shadow-[0_35px_80px_rgba(0,0,0,0.45)]'
 
 const fetchStudents = async () => {
   tableLoading.value = true
@@ -659,7 +662,7 @@ onMounted(() => {
 
 <template>
   <TooltipProvider :delayDuration="120">
-    <div class="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[#05070d] text-white">
+    <div class="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50 text-slate-900 transition-colors dark:bg-[#05070d] dark:text-white">
     <div class="pointer-events-none absolute inset-0">
       <div class="absolute inset-x-0 top-0 h-36 bg-linear-to-b from-white/10 to-transparent"></div>
       <div class="absolute -left-24 top-16 h-72 w-72 rounded-[120px] bg-indigo-500/25 blur-[180px]"></div>
@@ -678,13 +681,13 @@ onMounted(() => {
         <section class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 class="text-3xl font-semibold tracking-tight">Student Management</h1>
-            <p class="mt-2 text-sm text-white/60">Manage student records</p>
+            <p class="mt-2 text-sm text-slate-600 dark:text-white/60">Manage student records</p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <Button
               type="button"
               variant="outline"
-              class="border-white/20 bg-white/5 text-white/80 shadow-[0_10px_25px_rgba(0,0,0,0.45)] hover:bg-white/10 hover:text-white"
+              :class="frostedButtonClass"
               :disabled="importLoading"
               @click="openImportPicker"
             >
@@ -693,7 +696,7 @@ onMounted(() => {
             <Button
               type="button"
               variant="outline"
-              class="border-white/20 bg-white/5 text-white/80 shadow-[0_10px_25px_rgba(0,0,0,0.45)] hover:bg-white/10 hover:text-white"
+              :class="frostedButtonClass"
               :disabled="exportLoading"
               @click="handleExportStudents"
             >
@@ -758,7 +761,7 @@ onMounted(() => {
         />
       </main>
 
-      <DialogContent class="sm:max-w-3xl border border-white/15 bg-[#050912]/95 text-white shadow-[0_40px_120px_rgba(0,0,0,0.65)] backdrop-blur-2xl">
+      <DialogContent class="sm:max-w-3xl border border-slate-200/80 bg-white/98 text-slate-900 shadow-[0_40px_120px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-white/15 dark:bg-[#050912]/95 dark:text-white dark:shadow-[0_40px_120px_rgba(0,0,0,0.65)]">
         <DialogHeader>
           <DialogTitle>{{ isEditing ? 'Edit Student' : 'Add New Student' }}</DialogTitle>
         </DialogHeader>
@@ -766,7 +769,7 @@ onMounted(() => {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <form.Field name="firstName" v-slot="{ field }">
               <div class="space-y-2">
-                <label class="text-xs font-semibold tracking-wide text-white/60" :for="field.name">First Name</label>
+                <label class="text-xs font-semibold tracking-wide text-slate-600 dark:text-white/65" :for="field.name">First Name</label>
                 <Input
                   :id="field.name"
                   :modelValue="field.state.value"
@@ -776,13 +779,13 @@ onMounted(() => {
                   @update:modelValue="value => handleFieldChange(field, value)"
                   @blur="(event: FocusEvent) => handleFieldBlur(field, event)"
                 />
-                <p v-if="getFieldError('firstName')" class="text-xs text-red-300">{{ getFieldError('firstName') }}</p>
+                <p v-if="getFieldError('firstName')" class="text-xs text-red-500 dark:text-red-300">{{ getFieldError('firstName') }}</p>
               </div>
             </form.Field>
 
             <form.Field name="lastName" v-slot="{ field }">
               <div class="space-y-2">
-                <label class="text-xs font-semibold tracking-wide text-white/60" :for="field.name">Last Name</label>
+                <label class="text-xs font-semibold tracking-wide text-slate-600 dark:text-white/65" :for="field.name">Last Name</label>
                 <Input
                   :id="field.name"
                   :modelValue="field.state.value"
@@ -792,13 +795,13 @@ onMounted(() => {
                   @update:modelValue="value => handleFieldChange(field, value)"
                   @blur="(event: FocusEvent) => handleFieldBlur(field, event)"
                 />
-                <p v-if="getFieldError('lastName')" class="text-xs text-red-300">{{ getFieldError('lastName') }}</p>
+                <p v-if="getFieldError('lastName')" class="text-xs text-red-500 dark:text-red-300">{{ getFieldError('lastName') }}</p>
               </div>
             </form.Field>
 
             <form.Field name="dateOfBirth" v-slot="{ field }">
               <div class="space-y-2">
-                <label class="text-xs font-semibold tracking-wide text-white/60" :for="field.name">Date of Birth</label>
+                <label class="text-xs font-semibold tracking-wide text-slate-600 dark:text-white/65" :for="field.name">Date of Birth</label>
                 <Popover v-model:open="dobPickerOpen">
                   <PopoverTrigger asChild>
                     <div class="relative w-full">
@@ -811,8 +814,8 @@ onMounted(() => {
                         :aria-invalid="getFieldError('dateOfBirth') ? 'true' : 'false'"
                         :class="[
                           inputSurfaceClass,
-                          'cursor-pointer pr-12',
-                          formValues.dateOfBirth ? 'text-white' : 'text-white/70',
+                          'cursor-pointer pr-12 transition-colors',
+                          formValues.dateOfBirth ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-white/70',
                           getFieldError('dateOfBirth') ? 'ring-1 ring-red-400/80' : ''
                         ]"
                       />
@@ -824,7 +827,7 @@ onMounted(() => {
                         stroke-width="1.5"
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/70"
+                        class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-white/70"
                       >
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                         <line x1="16" y1="2" x2="16" y2="6" />
@@ -835,7 +838,7 @@ onMounted(() => {
                   </PopoverTrigger>
                   <PopoverContent
                     align="start"
-                    class="w-auto border border-white/15 bg-[#050912]/95 p-0 text-white shadow-[0_25px_70px_rgba(0,0,0,0.65)]"
+                    class="w-auto border border-slate-200/80 bg-white p-0 text-slate-900 shadow-[0_25px_70px_rgba(15,23,42,0.15)] dark:border-white/15 dark:bg-[#050912]/95 dark:text-white dark:shadow-[0_25px_70px_rgba(0,0,0,0.65)]"
                   >
                     <Calendar
                       v-model="dobCalendarBinding"
@@ -846,14 +849,14 @@ onMounted(() => {
                     />
                   </PopoverContent>
                 </Popover>
-                <p v-if="getFieldError('dateOfBirth')" class="text-xs text-red-300">{{ getFieldError('dateOfBirth') }}</p>
+                <p v-if="getFieldError('dateOfBirth')" class="text-xs text-red-500 dark:text-red-300">{{ getFieldError('dateOfBirth') }}</p>
               </div>
             </form.Field>
 
             <template v-if="!isEditing">
               <form.Field name="facultyCode" v-slot="{ field }">
                 <div class="space-y-2">
-                  <label class="text-xs font-semibold tracking-wide text-white/60" :for="field.name">Faculty</label>
+                  <label class="text-xs font-semibold tracking-wide text-slate-600 dark:text-white/65" :for="field.name">Faculty</label>
                   <Tooltip :disabled="!field.state.value">
                     <TooltipTrigger asChild>
                       <div class="block">
@@ -876,17 +879,17 @@ onMounted(() => {
                         </Select>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent v-if="field.state.value" class="max-w-xs text-xs text-white/80">
+                    <TooltipContent v-if="field.state.value" class="max-w-xs text-xs text-slate-700 dark:text-white/80">
                       {{ getFacultyDisplayLabel(field.state.value) }}
                     </TooltipContent>
                   </Tooltip>
-                  <p v-if="getFieldError('facultyCode')" class="text-xs text-red-300">{{ getFieldError('facultyCode') }}</p>
+                  <p v-if="getFieldError('facultyCode')" class="text-xs text-red-500 dark:text-red-300">{{ getFieldError('facultyCode') }}</p>
                 </div>
               </form.Field>
 
               <form.Field name="jenjangCode" v-slot="{ field }">
                 <div class="space-y-2">
-                  <label class="text-xs font-semibold tracking-wide text-white/60" :for="field.name">Level</label>
+                  <label class="text-xs font-semibold tracking-wide text-slate-600 dark:text-white/65" :for="field.name">Level</label>
                   <Tooltip :disabled="!field.state.value">
                     <TooltipTrigger asChild>
                       <div class="block">
@@ -909,17 +912,17 @@ onMounted(() => {
                         </Select>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent v-if="field.state.value" class="max-w-xs text-xs text-white/80">
+                    <TooltipContent v-if="field.state.value" class="max-w-xs text-xs text-slate-700 dark:text-white/80">
                       {{ formatOptionLabel(jenjangs, field.state.value) }}
                     </TooltipContent>
                   </Tooltip>
-                  <p v-if="getFieldError('jenjangCode')" class="text-xs text-red-300">{{ getFieldError('jenjangCode') }}</p>
+                  <p v-if="getFieldError('jenjangCode')" class="text-xs text-red-500 dark:text-red-300">{{ getFieldError('jenjangCode') }}</p>
                 </div>
               </form.Field>
 
               <form.Field name="angkatan" v-slot="{ field }">
                 <div class="space-y-2">
-                  <label class="text-xs font-semibold tracking-wide text-white/60" :for="field.name">Year</label>
+                  <label class="text-xs font-semibold tracking-wide text-slate-600 dark:text-white/65" :for="field.name">Year</label>
                   <Input
                     :id="field.name"
                     maxlength="2"
@@ -930,13 +933,13 @@ onMounted(() => {
                     @update:modelValue="value => handleFieldChange(field, value)"
                     @blur="(event: FocusEvent) => handleFieldBlur(field, event)"
                   />
-                  <p v-if="getFieldError('angkatan')" class="text-xs text-red-300">{{ getFieldError('angkatan') }}</p>
+                  <p v-if="getFieldError('angkatan')" class="text-xs text-red-500 dark:text-red-300">{{ getFieldError('angkatan') }}</p>
                 </div>
               </form.Field>
 
               <form.Field name="prodiCode" v-slot="{ field }">
                 <div class="space-y-2">
-                  <label class="text-xs font-semibold tracking-wide text-white/60" :for="field.name">Program</label>
+                  <label class="text-xs font-semibold tracking-wide text-slate-600 dark:text-white/65" :for="field.name">Program</label>
                   <Tooltip :disabled="!field.state.value">
                     <TooltipTrigger asChild>
                       <div class="block">
@@ -960,11 +963,11 @@ onMounted(() => {
                         </Select>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent v-if="field.state.value" class="max-w-xs text-xs text-white/80">
+                    <TooltipContent v-if="field.state.value" class="max-w-xs text-xs text-slate-700 dark:text-white/80">
                       {{ formatOptionLabel(availableProdis, field.state.value) }}
                     </TooltipContent>
                   </Tooltip>
-                  <p v-if="getFieldError('prodiCode')" class="text-xs text-red-300">{{ getFieldError('prodiCode') }}</p>
+                  <p v-if="getFieldError('prodiCode')" class="text-xs text-red-500 dark:text-red-300">{{ getFieldError('prodiCode') }}</p>
                 </div>
               </form.Field>
             </template>
@@ -975,7 +978,7 @@ onMounted(() => {
               v-if="isEditing"
               type="button"
               variant="ghost"
-              class="border border-white/15 bg-white/10 text-white/90 hover:bg-white/15 hover:text-white"
+              class="border border-slate-200/80 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white/90 dark:hover:bg-white/15 dark:hover:text-white"
               :disabled="loading"
               @click="() => { resetForm(); formDialogOpen = false }"
             >
@@ -994,13 +997,13 @@ onMounted(() => {
     </Dialog>
 
     <Dialog v-model:open="deleteModal.show">
-      <DialogContent class="border border-white/15 bg-[#050912]/95 text-white shadow-[0_35px_100px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+      <DialogContent class="border border-slate-200/80 bg-white/98 text-slate-900 shadow-[0_35px_100px_rgba(15,23,42,0.15)] backdrop-blur-2xl dark:border-white/15 dark:bg-[#050912]/95 dark:text-white dark:shadow-[0_35px_100px_rgba(0,0,0,0.6)]">
         <DialogHeader>
           <DialogTitle>Delete Student</DialogTitle>
         </DialogHeader>
-        <p class="text-sm text-white/70">Are you sure you want to delete this student? This action cannot be undone.</p>
+        <p class="text-sm text-slate-600 dark:text-white/70">Are you sure you want to delete this student? This action cannot be undone.</p>
         <DialogFooter>
-          <Button variant="ghost" class="border border-white/15 bg-white/10 text-white/90 hover:bg-white/15" @click="deleteModal.show = false">Cancel</Button>
+          <Button variant="ghost" class="border border-slate-200/80 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-white/15 dark:bg-white/10 dark:text-white/90 dark:hover:bg-white/15" @click="deleteModal.show = false">Cancel</Button>
           <Button variant="destructive" class="bg-red-500 text-white shadow-[0_10px_30px_rgba(239,68,68,0.45)] hover:bg-red-500/90" @click="deleteStudent">Delete</Button>
         </DialogFooter>
       </DialogContent>

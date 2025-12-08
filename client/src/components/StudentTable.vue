@@ -88,11 +88,11 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
 </script>
 
 <template>
-  <section class="rounded-xl border border-white/10 bg-[#03060f]/85 p-6 shadow-[0_45px_120px_rgba(0,0,0,0.65)] backdrop-blur-2xl">
-    <header class="flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-center md:justify-between">
+  <section class="rounded-xl border border-slate-200/70 bg-white/95 p-6 text-slate-900 shadow-[0_45px_120px_rgba(15,23,42,0.08)] backdrop-blur-2xl dark:border-white/10 dark:bg-[#03060f]/85 dark:text-white dark:shadow-[0_45px_120px_rgba(0,0,0,0.65)]">
+    <header class="flex flex-col gap-4 border-b border-slate-200/70 pb-6 dark:border-white/10 md:flex-row md:items-center md:justify-between">
       <div>
-        <h2 class="mt-1 text-2xl font-semibold text-white">Students</h2>
-        <p class="text-sm text-white/65">{{ total }} total records</p>
+        <h2 class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">Students</h2>
+        <p class="text-sm text-slate-500 dark:text-white/65">{{ total }} total records</p>
       </div>
     </header>
 
@@ -101,19 +101,19 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
         <div
           v-for="row in skeletonRows"
           :key="row"
-          class="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-5 text-white/50"
+          class="flex items-center gap-4 rounded-lg border border-slate-200/70 bg-slate-50/80 p-5 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-white/50"
         >
-          <div class="h-14 w-14 rounded-lg bg-white/15"></div>
+          <div class="h-14 w-14 rounded-lg bg-slate-200/60 dark:bg-white/15"></div>
           <div class="flex-1 space-y-3">
-            <div class="h-3 w-1/3 rounded-sm bg-white/15"></div>
-            <div class="h-3 w-1/4 rounded-sm bg-white/15"></div>
+            <div class="h-3 w-1/3 rounded-sm bg-slate-200/80 dark:bg-white/15"></div>
+            <div class="h-3 w-1/4 rounded-sm bg-slate-200/80 dark:bg-white/15"></div>
           </div>
-          <div class="h-3 w-16 rounded-sm bg-white/15"></div>
+          <div class="h-3 w-16 rounded-sm bg-slate-200/80 dark:bg-white/15"></div>
         </div>
       </template>
 
       <template v-else-if="students.length === 0">
-        <div class="flex flex-col items-center gap-4 rounded-lg border border-dashed border-white/15 bg-white/5 px-8 py-12 text-center">
+        <div class="flex flex-col items-center gap-4 rounded-lg border border-dashed border-slate-200/80 bg-slate-50/80 px-8 py-12 text-center text-slate-700 dark:border-white/15 dark:bg-white/5 dark:text-white">
           <Button
             type="button"
             class="bg-emerald-400 text-black shadow-[0_0_30px_rgba(16,185,129,0.35)] hover:bg-emerald-300"
@@ -122,8 +122,8 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
             Add Student
           </Button>
           <div>
-            <p class="text-base font-semibold text-white">No students yet</p>
-            <p class="text-sm text-white/65">Use the Add Student button above.</p>
+            <p class="text-base font-semibold text-slate-800 dark:text-white">No students yet</p>
+            <p class="text-sm text-slate-500 dark:text-white/65">Use the Add Student button above.</p>
           </div>
         </div>
       </template>
@@ -132,12 +132,12 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
         <article
           v-for="student in students"
           :key="student.id"
-          class="group rounded-xl border border-white/10 bg-linear-to-br from-white/5 via-white/0 to-transparent p-5 transition-all duration-300 hover:border-white/30 hover:bg-white/10"
+          class="group rounded-xl border border-slate-200/70 bg-white/95 p-5 transition-all duration-300 hover:border-slate-400 hover:bg-slate-50/90 hover:shadow-[0_25px_60px_rgba(15,23,42,0.1)] dark:border-white/10 dark:bg-[#050912]/60 dark:hover:border-white/30 dark:hover:bg-white/10"
         >
           <div class="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p class="text-base font-semibold text-white">{{ student.namaLengkap }}</p>
-              <p class="text-xs font-mono text-white/60">{{ student.nomorIndukMahasiswa }}</p>
+              <p class="text-base font-semibold text-slate-900 dark:text-white">{{ student.namaLengkap }}</p>
+              <p class="text-xs font-mono text-slate-500 dark:text-white/60">{{ student.nomorIndukMahasiswa }}</p>
             </div>
 
             <div class="flex flex-1 flex-col gap-6 xl:flex-row xl:items-center xl:justify-end">
@@ -147,21 +147,21 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
                   :key="field.key"
                   class="min-w-[140px]"
                 >
-                  <p class="text-xs text-white/55">{{ field.label }}</p>
-                  <p class="text-sm font-semibold text-white">{{ getMetadataValue(student, field.key) }}</p>
+                  <p class="text-xs text-slate-500 dark:text-white/55">{{ field.label }}</p>
+                  <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ getMetadataValue(student, field.key) }}</p>
                 </div>
               </div>
 
               <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                 <div>
-                  <p class="text-xs text-white/55">Age</p>
-                  <p class="text-base font-semibold text-white">{{ formatAge(student.usia) }}</p>
+                  <p class="text-xs text-slate-500 dark:text-white/55">Age</p>
+                  <p class="text-base font-semibold text-slate-900 dark:text-white">{{ formatAge(student.usia) }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="ghost"
-                    class="text-emerald-200 hover:bg-emerald-400/10 hover:text-emerald-100"
+                    class="text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-100"
                     @click="emit('edit', student.id)"
                   >
                     Edit
@@ -169,7 +169,7 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    class="text-red-300 hover:bg-red-500/10 hover:text-red-100"
+                    class="text-red-500 hover:bg-red-100 hover:text-red-600 dark:text-red-300 dark:hover:bg-red-500/10 dark:hover:text-red-100"
                     @click="emit('delete', student.id)"
                   >
                     Delete
@@ -182,7 +182,7 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
       </template>
     </div>
   </section>
-  <footer class="mt-8 flex flex-col gap-4 border-t border-white/10 pt-6 text-white/70 md:flex-row md:items-center md:justify-between">
+  <footer class="mt-8 flex flex-col gap-4 border-t border-slate-200/70 pt-6 text-slate-600 dark:border-white/10 dark:text-white/70 md:flex-row md:items-center md:justify-between">
     <p class="text-sm">
       <template v-if="total">
         Showing {{ pageStart }}
@@ -197,10 +197,10 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
       <div class="flex items-center gap-2 text-sm">
         <span>Rows per page</span>
         <Select :modelValue="String(pageSize)" @update:modelValue="handlePageSizeSelect">
-          <SelectTrigger class="h-9 w-20 border-white/20 bg-white/5 text-white">
+          <SelectTrigger class="h-9 w-20 border border-slate-200/80 bg-white text-slate-900 dark:border-white/20 dark:bg-white/5 dark:text-white">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent class="border-white/15 bg-[#050912]/95 text-white">
+          <SelectContent class="border border-slate-200/80 bg-white text-slate-900 dark:border-white/15 dark:bg-[#050912]/95 dark:text-white">
             <SelectItem
               v-for="option in pageSizeOptions"
               :key="option"
@@ -214,7 +214,7 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
       <div class="flex items-center gap-2 text-sm">
         <Button
           variant="ghost"
-          class="border border-white/10 px-3 text-white/80 hover:bg-white/10 hover:text-white"
+          class="border border-slate-200/80 px-3 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
           :disabled="page <= 1"
           @click="emit('change-page', page - 1)"
         >
@@ -223,7 +223,7 @@ const handlePageSizeSelect = (value: AcceptableValue) => {
         <span>Page {{ Math.min(page, totalPages) }} / {{ totalPages }}</span>
         <Button
           variant="ghost"
-          class="border border-white/10 px-3 text-white/80 hover:bg-white/10 hover:text-white"
+          class="border border-slate-200/80 px-3 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
           :disabled="page >= totalPages"
           @click="emit('change-page', page + 1)"
         >
