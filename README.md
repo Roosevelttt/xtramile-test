@@ -55,7 +55,7 @@ Combining the components above produces the prefix `C1423`. The system appends t
 	copy .env.example .env
 	```
 
-	Default launch settings, `VITE_API_BASE_URL=http://localhost:5091`.
+	Default launch settings, `VITE_API_URL=http://localhost:5091`.
 3. **Prepare the backend database**
 
 	```powershell
@@ -82,4 +82,4 @@ Combining the components above produces the prefix `C1423`. The system appends t
 	npm run dev
 	```
 
-	Vite hosts at `http://localhost:5173` and proxies API calls to `VITE_API_BASE_URL`.
+	Vite hosts at `http://localhost:5173` and proxies API calls to `VITE_API_URL`.
